@@ -21,7 +21,7 @@ class Question(models.Model):
         ('multi_choice', 'Multiple choice'),
     )
 
-    poll = models.ForeignKey(Poll, on_delete=models.CASCADE)
+    poll = models.ForeignKey(Poll, related_name='questions', on_delete=models.CASCADE)
     text = models.CharField(max_length=TEXT_LENGTH)
     type = models.CharField(max_length=20, choices=TYPES, default='text')
 
@@ -30,7 +30,7 @@ class Question(models.Model):
 
 
 class Answer(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name='answers', on_delete=models.CASCADE)
     text = models.CharField(max_length=TEXT_LENGTH)
 
     def __str__(self):
