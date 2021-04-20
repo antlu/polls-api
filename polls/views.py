@@ -1,6 +1,8 @@
+from django.utils import timezone
 from rest_framework import generics
 
 from polls.models import CompletedPoll, Poll, Question
+from polls.permissions import ReadOnly
 from polls.serializers import (
     CompletedPollSerializer, PollSerializer, QuestionSerializer,
 )
@@ -30,3 +32,12 @@ class CompletedPollList(generics.ListCreateAPIView):
         if user_id:
             return queryset.filter(user=user_id)
         return queryset
+
+
+class ActivePollList(generics.ListCreateAPIView):
+    current_time = timezone.now()
+    queryset = Poll.objects.filter(
+        start_time__lte=current_time, end_time__gte=current_time,
+    )
+    serializer_class = PollSerializer
+    permission_classes = (ReadOnly,)
