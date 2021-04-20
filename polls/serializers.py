@@ -118,9 +118,22 @@ class CompletedPollSerializer(serializers.ModelSerializer):
                 "Can't participate in inactive polls.",
             )
 
+        poll_question_ids = {
+            question.id for question in Question.objects.filter(poll=poll)
+        }
+
+        received_question_ids = {
+            answer_data['question_id'] for answer_data in data['answers']
+        }
+
+        if poll_question_ids - received_question_ids:
+            raise serializers.ValidationError(
+                "Answers for some questions were not submitted.",
+            )
+
         if not all(
-            poll.questions.filter(id=answer_data['question_id']).exists()
-            for answer_data in data['answers']
+            poll.questions.filter(id=question_id).exists()
+            for question_id in received_question_ids
         ):
             raise serializers.ValidationError(
                 "Questions must belong to the poll {}.".format(poll.id),
