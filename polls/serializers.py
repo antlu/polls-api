@@ -20,7 +20,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if data['type'] == 'text':
-            if data['answers']:
+            if data.get('answers'):
                 raise serializers.ValidationError(
                     "Text question cannot have answers.",
                 )
