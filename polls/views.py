@@ -22,5 +22,11 @@ class QuestionDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CompletedPollList(generics.ListCreateAPIView):
-    queryset = CompletedPoll.objects.all()
     serializer_class = CompletedPollSerializer
+
+    def get_queryset(self):
+        queryset = CompletedPoll.objects.all()
+        user_id = self.request.query_params.get('user_id')
+        if user_id:
+            return queryset.filter(user=user_id)
+        return queryset
