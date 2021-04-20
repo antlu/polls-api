@@ -1,6 +1,9 @@
 from django.utils import timezone
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from polls.models import CompletedPoll, Poll, Question
 from polls.permissions import ReadOnly, PostOnly
@@ -43,3 +46,13 @@ class ActivePollList(generics.ListCreateAPIView):
     )
     serializer_class = PollSerializer
     permission_classes = (ReadOnly,)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def home(request):
+    return Response({
+        'active-polls': reverse('active-poll-list', request=request),
+        'polls': reverse('poll-list', request=request),
+        'results': reverse('completed-poll-list', request=request),
+    })
