@@ -1,8 +1,9 @@
 from django.utils import timezone
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 
 from polls.models import CompletedPoll, Poll, Question
-from polls.permissions import ReadOnly
+from polls.permissions import ReadOnly, PostOnly
 from polls.serializers import (
     CompletedPollSerializer, PollSerializer, QuestionSerializer,
 )
@@ -25,6 +26,7 @@ class QuestionDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class CompletedPollList(generics.ListCreateAPIView):
     serializer_class = CompletedPollSerializer
+    permission_classes = (IsAuthenticated | PostOnly,)
 
     def get_queryset(self):
         queryset = CompletedPoll.objects.all()
