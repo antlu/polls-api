@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import serializers
 
 from polls.models import Answer, CompletedPoll, Poll, Question, UserAnswer
@@ -15,6 +17,18 @@ class QuestionSerializer(serializers.ModelSerializer):
     class Meta(object):
         model = Question
         exclude = ('poll',)
+
+    def validate(self, data):
+        if data['type'] == 'text':
+            if data['answers']:
+                raise serializers.ValidationError(
+                    "Text question cannot have answers.",
+                )
+        elif not data['answers']:
+            raise serializers.ValidationError(
+                "Non-text question must have answers.",
+            )
+        return data
 
 
 def add_questions(poll, questions_data):
@@ -48,6 +62,20 @@ class PollSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    def validate_questions(self, questions):
+        if not questions:
+            raise serializers.ValidationError(
+                "Poll must have questions.",
+            )
+        return questions
+
+    def validate_start_time(self, datetime):
+        if self.instance:
+            raise serializers.ValidationError(
+                "Start time cannot be changed.",
+            )
+        return datetime
+
 
 class UserAnswerSerializer(serializers.ModelSerializer):
     question = serializers.StringRelatedField()
@@ -73,3 +101,29 @@ class CompletedPollSerializer(serializers.ModelSerializer):
         for answer_data in answers_data:
             UserAnswer.objects.create(completed_poll=completed_poll, **answer_data)
         return completed_poll
+
+    def validate_answers(self, answers):
+        if not answers:
+            raise serializers.ValidationError(
+                "Poll must have answers.",
+            )
+        return answers
+
+    def validate(self, data):
+        poll = get_object_or_404(Poll, pk=data['poll_id'])
+
+        current_time = timezone.now()
+        if current_time < poll.start_time or current_time > poll.end_time:
+            raise serializers.ValidationError(
+                "Can't participate in inactive polls.",
+            )
+
+        if not all(
+            poll.questions.filter(id=answer_data['question_id']).exists()
+            for answer_data in data['answers']
+        ):
+            raise serializers.ValidationError(
+                "Questions must belong to the poll {}.".format(poll.id),
+            )
+
+        return data
