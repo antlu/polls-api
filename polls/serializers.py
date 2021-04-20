@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from polls.models import Answer, Poll, Question
+from polls.models import Answer, CompletedPoll, Poll, Question, UserAnswer
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -47,3 +47,29 @@ class PollSerializer(serializers.ModelSerializer):
         instance.description = validated_data['description']
         instance.save()
         return instance
+
+
+class UserAnswerSerializer(serializers.ModelSerializer):
+    question = serializers.StringRelatedField()
+    question_id = serializers.IntegerField()
+
+    class Meta(object):
+        model = UserAnswer
+        exclude = ('completed_poll', 'id')
+
+
+class CompletedPollSerializer(serializers.ModelSerializer):
+    answers = UserAnswerSerializer(many=True)
+    poll = serializers.HyperlinkedRelatedField(view_name='poll-detail', read_only=True)
+    poll_id = serializers.IntegerField()
+
+    class Meta(object):
+        model = CompletedPoll
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        answers_data = validated_data.pop('answers')
+        completed_poll = CompletedPoll.objects.create(**validated_data)
+        for answer_data in answers_data:
+            UserAnswer.objects.create(completed_poll=completed_poll, **answer_data)
+        return completed_poll

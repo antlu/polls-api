@@ -35,3 +35,17 @@ class Answer(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class CompletedPoll(models.Model):
+    user = models.IntegerField()
+    poll = models.ForeignKey(Poll, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.poll.title
+
+
+class UserAnswer(models.Model):
+    completed_poll = models.ForeignKey(CompletedPoll, related_name='answers', on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.PROTECT)
+    answer = models.TextField()
